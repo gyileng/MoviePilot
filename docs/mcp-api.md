@@ -648,3 +648,10 @@ REST 调用示例：
 - [下载器操作参考](../skills/downloader-operation/SKILL.md)、[媒体服务器操作参考](../skills/mediaserver-operation/SKILL.md)、[数据库操作参考](../skills/database-operation/SKILL.md)：原生服务与 SQL 操作合同。
 
 本文维护连接方式、发现流程、调用结构和结果处理。字段清单、操作全集、提供方差异由运行时 Schema 及对应参考维护；新增业务能力时不应继续向本文追加 REST 路由表、前端展示契约或版本变更记录。
+
+### 标题搜索的 M-Team 模式
+
+`search.title` 的 `query.mode` 是可选字符串，仅作用于 M-Team。非空值原样传入站点，
+同时发送 `categories=[]`，覆盖 `mtype` 映射和站点分类限制；未传或空字符串保留原分类行为。
+其他站点忽略该参数，结果解析与过滤规则保持原有行为。标题 SSE（含手动分页）同样支持，
+续页请求需继续传入相同 `mode`；最近搜索上下文保留该值。

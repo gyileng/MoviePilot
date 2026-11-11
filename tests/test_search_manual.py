@@ -222,9 +222,10 @@ async def test_closing_preview_waits_for_inflight_workers_without_committing_pag
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("mode", [None, "normal", "adult"])
 @pytest.mark.parametrize("requested,expected", [(None, None), (MediaType.UNKNOWN, None),
                                                (MediaType.TV, MediaType.TV), (MediaType.MOVIE, MediaType.MOVIE)])
-async def test_title_search_keeps_unrestricted_mteam_categories_and_explicit_type(manual_owner, monkeypatch, requested, expected):
+async def test_title_search_keeps_unrestricted_mteam_categories_and_explicit_type(manual_owner, monkeypatch, requested, expected, mode):
     """
     标题搜索保留馒头站点的不限分类请求，并按显式媒体类型筛选结果。
     """
@@ -266,20 +267,23 @@ async def test_title_search_keeps_unrestricted_mteam_categories_and_explicit_typ
     monkeypatch.setattr(owner, "_sync_indexers", lambda _ids: [{"id": 1, "name": "M-Team"}])
     def request(**params):
         assert params["mtype"] == expected
-        error, torrents = spider.search(keyword=params["keyword"], mtype=params["mtype"], page=params["page"])
+        error, torrents = spider.search(keyword=params["keyword"], mtype=params["mtype"], page=params["page"], mode=params.get("mode"))
         assert not error
         report_site_search_outcome(attempted=True, outcome="success")
         return IndexerModule._IndexerModule__parse_result(params["site"], torrents, 0)
     monkeypatch.setattr(owner, "search_site_torrents", request)
     monkeypatch.setattr(owner, "search_plugin_torrents", lambda **params: plugin_types.append(params["mtype"]) or [])
-    params = {"keyword": "Show"}
+    params = {"keyword": "Show", "mode": mode}
     if requested is not None:
         params["mtype"] = requested
     result = await events(SearchManualOwner.events(owner, params=params))
     expected_categories = ([] if expected is None else MTorrentSpider._tv_category
                            if expected == MediaType.TV else MTorrentSpider._movie_category)
+    if mode:
+        expected_categories = []
+    assert requests[0].get("mode") == mode
     assert requests[0]["categories"] == expected_categories
-    assert len(result[-2]["items"]) == (1 if expected == MediaType.MOVIE else 3)
+    assert len(result[-2]["items"]) == (1 if expected == MediaType.MOVIE and not mode else 3)
     assert not any(source["error"] for source in result[-1]["sources"])
     assert plugin_types == [expected]
     source = result[-1]["sources"][0]
@@ -287,7 +291,7 @@ async def test_title_search_keeps_unrestricted_mteam_categories_and_explicit_typ
         **params, "page": source["page"] + 1, "source": source["source"]}))
     assert [request["pageNumber"] for request in requests] == [1, 2]
     assert all(request["categories"] == expected_categories for request in requests)
-    assert len(next_page[-2]["items"]) == (1 if expected == MediaType.MOVIE else 3)
+    assert len(next_page[-2]["items"]) == (1 if expected == MediaType.MOVIE and not mode else 3)
     assert not any(source["error"] for source in next_page[-1]["sources"])
     assert plugin_types == [expected]
 
@@ -761,3 +765,31 @@ async def test_cancelled_page_never_publishes_diagnostics_snapshot(manual_owner,
         release.set()
         await stream.aclose()
     save_context.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("next_mode,expected", [("normal", [3]), ("adult", [2, 3])])
+async def test_mode_changes_isolate_previous_page_summary(manual_owner, monkeypatch, next_mode, expected):
+    """
+    相同来源切换模式后须补查上一页，不能复用另一模式的页摘要。
+    """
+    owner, calls, _ = manual_owner
+    original = owner.search_site_torrents
+
+    def request(**params):
+        """
+        模拟接受模式的站点，沿用页资源载具。
+        """
+        params.pop("mode", None)
+        return original(**params)
+
+    monkeypatch.setattr(owner, "search_site_torrents", request)
+    source = encode_source("1", "Show")
+    await events(SearchManualOwner.events(owner, params={
+        "keyword": "Show", "page": 2, "source": source, "mode": "normal",
+    }))
+    calls.clear()
+    await events(SearchManualOwner.events(owner, params={
+        "keyword": "Show", "page": 3, "source": source, "mode": next_mode,
+    }))
+    assert [page for _site, _keyword, page in calls] == expected

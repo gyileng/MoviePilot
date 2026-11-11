@@ -50,11 +50,13 @@ def normalize_search_params(
         "sites": str(params.get("sites") or ""),
         "result_type": str(params.get("result_type") or "torrent"),
     }
+    if params.get("mode"):
+        normalized["mode"] = str(params["mode"])
     if params.get("music_type"):
         normalized["music_type"] = str(params["music_type"])
     if str(params.get("include_candidates", "")).casefold() in ("true", "1"):
         normalized["include_candidates"] = "true"
-    return normalized if normalized["keyword"] or media_id else None
+    return normalized if normalized["keyword"] or media_id or normalized.get("mode") else None
 
 
 class SearchStateService:
@@ -99,9 +101,12 @@ class SearchStateService:
         music_type: Optional[str] = None,
         result_type: Optional[str] = "torrent",
         include_candidates: bool = False,
+        mode: Optional[str] = None,
     ) -> Optional[Dict[str, str]]:
         """
         把公开搜索参数构造成可持久化的兼容字典。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         return normalize_search_params(
             {
@@ -118,6 +123,7 @@ class SearchStateService:
                 "music_type": music_type,
                 "result_type": result_type or "torrent",
                 "include_candidates": include_candidates,
+                "mode": mode,
             }
         )
 

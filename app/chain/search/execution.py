@@ -36,6 +36,7 @@ class MediaSearchPlan:
     :param filter_params: 质量、分辨率等附加过滤条件，None 表示不附加条件
     :param include_candidates: 是否保留尚未确定精确匹配的候选资源，默认只保留已确认结果
     :param candidate_filter: 匹配后对候选上下文列表施加的额外筛选函数，None 表示不额外筛选
+    :param mode: M-Team 标题搜索模式，非空时清空该站点请求分类
     :param rule_groups_signature: 动态规则选择的稳定快照，用于判断已保存搜索检查点是否失效
     """
 
@@ -50,6 +51,7 @@ class MediaSearchPlan:
     include_candidates: bool = False
     candidate_filter: Optional[Callable[[List[Context]], List[Context]]] = None
     rule_groups_signature: Optional[Any] = None
+    mode: Optional[str] = None
 
 
 @dataclass(frozen=True, slots=True)

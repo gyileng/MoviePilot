@@ -4777,7 +4777,9 @@
       "execution": "sync_or_async",
       "family": "media-discovery",
       "input_contract": "TorrentSearchRequest",
-      "optional_parameters": [],
+      "optional_parameters": [
+        "mode"
+      ],
       "plugin_short_circuit": true,
       "public_to_plugins": true,
       "required_parameters": [
@@ -7519,7 +7521,9 @@
       "execution": "sync_or_async",
       "family": "media-discovery",
       "input_contract": "TorrentSearchRequest",
-      "optional_parameters": [],
+      "optional_parameters": [
+        "mode"
+      ],
       "plugin_short_circuit": true,
       "public_to_plugins": true,
       "required_parameters": [

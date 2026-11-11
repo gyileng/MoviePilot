@@ -197,9 +197,12 @@ def _search_site_page(
     keyword: str,
     media_type: Optional[MediaType],
     page: int,
+    mode: Optional[str] = None,
 ) -> List[TorrentInfo]:
     """
     获得站点共享请求许可后执行一页同步搜索。
+
+    :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
     """
     if _wait_for_site_request(site):
         return []
@@ -208,6 +211,7 @@ def _search_site_page(
         keyword=keyword,
         mtype=media_type,
         page=page,
+        mode=mode,
     )
 
 
@@ -218,9 +222,12 @@ def _timed_sync_site_page(
     keyword: str,
     mtype: Optional[MediaType],
     page: int,
+    mode: Optional[str] = None,
 ) -> tuple[List[TorrentInfo], float]:
     """
     执行同步站点搜索并返回本页耗时，不包含线程池排队时间。
+
+    :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
     """
     started_at = time.perf_counter()
     result = owner._search_site_torrents_with_budget(
@@ -228,6 +235,7 @@ def _timed_sync_site_page(
         keyword=keyword,
         mtype=mtype,
         page=page,
+        mode=mode,
     )
     return result, time.perf_counter() - started_at
 
@@ -351,9 +359,12 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
         search_keyword: str,
         media_type: Optional[MediaType],
         mediainfo: Optional[MediaInfo] = None,
+        mode: Optional[str] = None,
     ) -> None:
         """
         向进程共享线程 owner 提交一页，并登记该站点的续页位置。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         page_number = search_pages[page_index]
         future = ThreadHelper().submit(
@@ -363,6 +374,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
             keyword=_site_keyword(site, search_keyword, mediainfo),
             mtype=media_type,
             page=page_number,
+            mode=mode,
         )
         pending[future] = (site, page_index, page_number)
 
@@ -403,18 +415,21 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
         keyword: str,
         mtype: Optional[MediaType],
         page: int,
+        mode: Optional[str] = None,
     ) -> List[TorrentInfo]:
         """
         在订阅专属站点预算内执行一页同步搜索。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         activity = current_activity_run()
         budget = getattr(self, "_subscription_site_budget", None)
         site_id = site.get("id")
         if not isinstance(budget, SubscriptionSiteBudget) or not isinstance(site_id, int):
             if activity is None:
-                return _search_site_page(self, site=site, keyword=keyword, media_type=mtype, page=page)
+                return _search_site_page(self, site=site, keyword=keyword, media_type=mtype, page=page, mode=mode)
             with capture_site_search_observation() as observation:
-                result = _search_site_page(self, site=site, keyword=keyword, media_type=mtype, page=page)
+                result = _search_site_page(self, site=site, keyword=keyword, media_type=mtype, page=page, mode=mode)
                 if activity and isinstance(site_id, int):
                     activity.site(site_id, name=str(site.get("name") or ""), candidates=len(result or []),
                                   status=observation.outcome if observation.attempted else "received", attempted=observation.attempted)
@@ -448,6 +463,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
                     keyword=keyword,
                     media_type=mtype,
                     page=page,
+                    mode=mode,
                 )
             except Exception as error:
                 if activity:
@@ -493,9 +509,12 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
         search_keyword: str,
         media_type: Optional[MediaType],
         mediainfo: Optional[MediaInfo] = None,
+        mode: Optional[str] = None,
     ) -> bool:
         """
         提交下一个尚未开始的站点，返回是否成功提交。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         try:
             site = next(queued_sites)
@@ -510,6 +529,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
             search_keyword=search_keyword,
             media_type=media_type,
             mediainfo=mediainfo,
+            mode=mode,
         )
         return True
 
@@ -524,9 +544,12 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
         results: List[TorrentInfo],
         progress: ProgressHelper,
         mediainfo: Optional[MediaInfo] = None,
+        mode: Optional[str] = None,
     ) -> Dict[str, tuple[str, float]]:
         """
         在共享线程池中按站点串行翻页，并把结果合并到调用方集合。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         activity = current_activity_run()
         if activity:
@@ -550,6 +573,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
                 search_keyword=search_keyword,
                 media_type=media_type,
                 mediainfo=mediainfo,
+                mode=mode,
             )
 
         try:
@@ -586,6 +610,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
                             search_keyword=search_keyword,
                             media_type=media_type,
                             mediainfo=mediainfo,
+                            mode=mode,
                         )
                     else:
                         logger.debug(f"{site.get('name')} 第 {page_number} 页返回 {len(page_results)} 条，停止继续翻页")
@@ -597,6 +622,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
                             search_keyword=search_keyword,
                             media_type=media_type,
                             mediainfo=mediainfo,
+                            mode=mode,
                         )
                     logger.debug(f"站点搜索进度：{finish_count} / {total_num}")
                     progress.update(
@@ -616,9 +642,12 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
         page: Optional[int] = 0,
         area: Optional[str] = "title",
         mtype: Optional[MediaType] = None,
+        mode: Optional[str] = None,
     ) -> Optional[List[TorrentInfo]]:
         """
         共享线程按站点翻页；恢复搜索仅查询待完成且仍启用的站点。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         indexer_sites = self._sync_indexers(sites)
         media_type = self._torrent_type(mediainfo, mtype)
@@ -658,6 +687,7 @@ class _SearchProviderSyncOwner(_SearchOwnerBase):
                 results=results,
                 progress=progress,
                 mediainfo=mediainfo,
+                mode=mode,
             )
 
             elapsed = (datetime.now() - start_time).seconds
@@ -945,9 +975,12 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
         page: Optional[int],
         area: Optional[str],
         mtype: Optional[MediaType],
+        mode: Optional[str] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         构造种子 provider 的 canonical 事件流。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         indexer_sites = await self._async_indexers(sites)
         media_type = self._torrent_type(mediainfo, mtype)
@@ -973,6 +1006,7 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
                 keyword=_site_keyword(site, search_keyword, mediainfo),
                 mtype=media_type,
                 page=page_number,
+                mode=mode,
             )
 
         def should_continue(site: SiteIndexer, page_results: List[Any]) -> bool:
@@ -1010,9 +1044,12 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
         page: Optional[int] = 0,
         area: Optional[str] = "title",
         mtype: Optional[MediaType] = None,
+        mode: Optional[str] = None,
     ) -> Optional[List[TorrentInfo]]:
         """
         收集 canonical provider 事件流并返回完整资源列表。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         results: List[TorrentInfo] = []
         events = self._iter_torrent_events(
@@ -1022,6 +1059,7 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
             page=page,
             area=area,
             mtype=mtype,
+            mode=mode,
         )
         async with aclosing(events):
             async for event in events:
@@ -1037,9 +1075,12 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
         page: Optional[int] = 0,
         area: Optional[str] = "title",
         mtype: Optional[MediaType] = None,
+        mode: Optional[str] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         直接转发 canonical provider 事件流。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         events = self._iter_torrent_events(
             keyword=keyword,
@@ -1048,6 +1089,7 @@ class SearchProviderOwner(_SearchProviderSyncOwner):
             page=page,
             area=area,
             mtype=mtype,
+            mode=mode,
         )
         async with aclosing(events):
             async for event in events:

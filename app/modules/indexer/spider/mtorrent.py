@@ -122,17 +122,20 @@ class MTorrentSpider:
         return f"api.{registered_domain}" if registered_domain else host
 
     def __get_params(self, keyword: str, mtype: Optional[MediaType] = None, page: Optional[int] = 0,
-                     cat: Optional[str] = None) -> dict[str, object]:
+                     cat: Optional[str] = None, mode: Optional[str] = None) -> dict[str, object]:
         """
         构造请求参数，显式站点分类优先于媒体类型预置分类。
 
         :param keyword: 搜索关键词，IMDb 标识会转换为完整链接
         :param mtype: 未指定站点分类时使用的媒体类型
         :param page: 从 0 开始的页码，提交到站点时转换为从 1 开始
+        :param mode: M-Team 搜索模式；非空时覆盖所有分类限制并发送空分类数组
         :param cat: 逗号分隔的站点分类 ID，未指定时沿用媒体类型筛选
         :return: M-Team 搜索请求体
         """
-        if cat:
+        if mode:
+            categories = []
+        elif cat:
             categories = [category.strip() for category in cat.split(",")]
         elif not mtype:
             categories = []
@@ -146,6 +149,7 @@ class MTorrentSpider:
         if keyword and keyword.startswith("tt"):
             keyword = f"https://www.imdb.com/title/{keyword}"
         return {
+            **({"mode": mode} if mode else {}),
             "keyword": keyword,
             "categories": categories,
             "pageNumber": int(page or 0) + 1,
@@ -239,7 +243,7 @@ class MTorrentSpider:
         return True, []
 
     def search(self, keyword: str, mtype: Optional[MediaType] = None, page: Optional[int] = 0,
-               search_type: Optional[str] = None, cat: Optional[str] = None) -> Tuple[bool, List[dict[str, Any]]]:
+               search_type: Optional[str] = None, cat: Optional[str] = None, mode: Optional[str] = None) -> Tuple[bool, List[dict[str, Any]]]:
         """
         搜索种子或字幕。
 
@@ -247,6 +251,7 @@ class MTorrentSpider:
         :param mtype: 目标媒体类型，未指定时不额外限制媒体类型
         :param page: 从 0 开始的搜索页码
         :param search_type: 资源类型；subtitles 表示字幕，其余值搜索种子
+        :param mode: M-Team 搜索模式；非空时覆盖所有分类限制并发送空分类数组
         :param cat: 逗号分隔的站点分类 ID，优先于媒体类型，仅对种子搜索生效
         :return: 是否发生错误及标准化资源列表；空列表也可能表示没有匹配资源
         """
@@ -255,7 +260,7 @@ class MTorrentSpider:
         if not self._apikey:
             return True, []
 
-        params = self.__get_params(keyword, mtype, page, cat)
+        params = self.__get_params(keyword, mtype, page, cat, mode)
 
         res = RequestUtils(
             headers={
@@ -270,7 +275,7 @@ class MTorrentSpider:
         return self.__process_response(res)
 
     async def async_search(self, keyword: str, mtype: Optional[MediaType] = None, page: Optional[int] = 0,
-                           search_type: Optional[str] = None, cat: Optional[str] = None) -> Tuple[bool, List[dict[str, Any]]]:
+                           search_type: Optional[str] = None, cat: Optional[str] = None, mode: Optional[str] = None) -> Tuple[bool, List[dict[str, Any]]]:
         """
         异步搜索种子或字幕。
 
@@ -278,6 +283,7 @@ class MTorrentSpider:
         :param mtype: 目标媒体类型，未指定时不额外限制媒体类型
         :param page: 从 0 开始的搜索页码
         :param search_type: 资源类型；subtitles 表示字幕，其余值搜索种子
+        :param mode: M-Team 搜索模式；非空时覆盖所有分类限制并发送空分类数组
         :param cat: 逗号分隔的站点分类 ID，优先于媒体类型，仅对种子搜索生效
         :return: 是否发生错误及标准化资源列表；空列表也可能表示没有匹配资源
         """
@@ -286,7 +292,7 @@ class MTorrentSpider:
         if not self._apikey:
             return True, []
 
-        params = self.__get_params(keyword, mtype, page, cat)
+        params = self.__get_params(keyword, mtype, page, cat, mode)
 
         res = await AsyncRequestUtils(
             headers={

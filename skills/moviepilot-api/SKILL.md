@@ -1,6 +1,6 @@
 ---
 name: moviepilot-api
-version: 72
+version: 73
 description: >-
   Use this skill for MoviePilot product operations such as media search, torrent
   search, downloads, subscriptions, library checks, sites, storage, workflows,
@@ -459,3 +459,6 @@ New records returned by `download.history.list` may include `note.subscription_d
 Filling missing episodes remains an initial download even when quality upgrades are enabled.
 A pack containing both missing and previously downloaded episodes counts as an upgrade and retains both lists.
 Do not infer provenance from current subscription settings when an older history record has no marker.
+
+`search.title` accepts optional `query.mode` for M-Team. A nonempty value overrides
+site categories with an empty array; other sites ignore it. See `api/search.md`.

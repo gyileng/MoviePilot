@@ -673,7 +673,7 @@ class ChainBase(RecognitionMixin, MessageProcessingMixin, NotificationMixin, met
         """
         return (
             self._module_dispatcher.execute_plugin_modules(
-                "search_torrents", None, site={}, keyword=keyword, mtype=mtype, page=page
+                "search_torrents", None, site={}, keyword=keyword, mtype=mtype, page=page,
             )
             or []
         )
@@ -684,13 +684,17 @@ class ChainBase(RecognitionMixin, MessageProcessingMixin, NotificationMixin, met
         keyword: str,
         mtype: Optional[MediaType] = None,
         page: Optional[int] = 0,
+        mode: Optional[str] = None,
     ) -> List[TorrentInfo]:
         """
         仅搜索指定站点索引器；插件资源源由搜索链统一调用一次。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         return (
             self._module_dispatcher.execute_system_modules(
-                "search_torrents", None, site=site, keyword=keyword, mtype=mtype, page=page
+                "search_torrents", None, site=site, keyword=keyword, mtype=mtype, page=page,
+                mode=mode,
             )
             or []
         )
@@ -740,7 +744,7 @@ class ChainBase(RecognitionMixin, MessageProcessingMixin, NotificationMixin, met
         """
         return (
             await self._module_dispatcher.async_execute_plugin_modules(
-                "async_search_torrents", None, site={}, keyword=keyword, mtype=mtype, page=page
+                "async_search_torrents", None, site={}, keyword=keyword, mtype=mtype, page=page,
             )
             or []
         )
@@ -751,13 +755,17 @@ class ChainBase(RecognitionMixin, MessageProcessingMixin, NotificationMixin, met
         keyword: str,
         mtype: Optional[MediaType] = None,
         page: Optional[int] = 0,
+        mode: Optional[str] = None,
     ) -> List[TorrentInfo]:
         """
         异步搜索指定站点索引器。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         return (
             await self._module_dispatcher.async_execute_system_modules(
-                "async_search_torrents", None, site=site, keyword=keyword, mtype=mtype, page=page
+                "async_search_torrents", None, site=site, keyword=keyword, mtype=mtype, page=page,
+                mode=mode,
             )
             or []
         )

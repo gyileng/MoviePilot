@@ -592,14 +592,17 @@ async def search_by_title_stream(
     manual_paging: bool = False,
     source: Optional[str] = None,
     _: _SchemaTokenPayload = Depends(verify_resource_token),
+    mode: Optional[str] = None,
 ) -> Any:
     """
     根据名称渐进式模糊搜索站点资源，返回格式为SSE
+
+    :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
     """
 
     if manual_paging and keyword and _parse_media_type(mtype) != MediaType.MUSIC:
         event_source = SearchChain().search_page_events(params={
-            "keyword": keyword, "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
+            "keyword": keyword, "mode": mode, "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
             "page": page, "source": source,
             "user_id": _search_user_id(_),
         })
@@ -610,8 +613,9 @@ async def search_by_title_stream(
             sites=_parse_site_list(sites),
             cache_local=True,
             mtype=_parse_media_type(mtype),
+            mode=mode,
         ), _search_user_id(_), params={
-            "keyword": keyword or "", "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
+            "keyword": keyword or "", "mode": mode, "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
         })
     return StreamingResponse(
         _stream_search_events(request, event_source),
@@ -631,9 +635,12 @@ async def search_by_title(
     page: Optional[int] = 0,
     sites: Optional[str] = None,
     _: _SchemaTokenPayload = Depends(verify_token),
+    mode: Optional[str] = None,
 ) -> Any:
     """
     根据名称模糊搜索站点资源，支持分页，关键词为空是返回首页资源
+
+    :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
     """
     torrents = await SearchChain().async_search_by_title(
         title=keyword or "",
@@ -641,10 +648,11 @@ async def search_by_title(
         sites=_parse_site_list(sites),
         cache_local=True,
         mtype=_parse_media_type(mtype),
+        mode=mode,
     )
     serialized_results = _serialize_context_results(torrents or [])
     await _save_user_search_context(_search_user_id(_), params={
-        "keyword": keyword or "", "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
+        "keyword": keyword or "", "mode": mode, "mtype": _parse_media_type(mtype), "sites": _parse_site_list(sites),
     }, results=serialized_results)
     if not torrents:
         return _SchemaResponse(success=False, message="未搜索到任何资源")

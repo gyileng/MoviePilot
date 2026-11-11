@@ -36,9 +36,12 @@ def _build_title_search_params(
     sites: Optional[List[int]],
     mtype: Optional[MediaType],
     include_empty_type: bool = False,
+    mode: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     构造标题搜索共享的 provider 与缓存参数。
+
+    :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
     """
     provider_params: Dict[str, Any] = {
         "keyword": title,
@@ -53,6 +56,9 @@ def _build_title_search_params(
         "area": "title",
         "sites": sites,
     }
+    if mode:
+        provider_params["mode"] = mode
+        cache_params["mode"] = mode
     return provider_params, cache_params
 
 
@@ -305,6 +311,7 @@ class SearchTitleOwner(_SearchOwnerBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[List[str]] = None,
+        mode: Optional[str] = None,
     ) -> List[Context]:
         """
         根据标题搜索资源，不识别媒体信息，按默认搜索过滤规则返回站点内容
@@ -314,12 +321,15 @@ class SearchTitleOwner(_SearchOwnerBase):
         :param cache_local: 是否缓存到本地
         :param mtype: 限定站点资源分类
         :param rule_groups: 指定过滤规则组，为空时使用默认搜索过滤规则
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         search_params, cache_params = _build_title_search_params(
             title=title,
             page=page,
             sites=sites,
             mtype=mtype,
+            mode=mode,
         )
         if title:
             logger.info(f"开始搜索资源，关键词：{title} ...")
@@ -348,6 +358,7 @@ class SearchTitleOwner(_SearchOwnerBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[List[str]] = None,
+        mode: Optional[str] = None,
     ) -> List[Context]:
         """
         根据标题异步搜索资源，不识别媒体信息，按默认搜索过滤规则返回站点内容
@@ -357,12 +368,15 @@ class SearchTitleOwner(_SearchOwnerBase):
         :param cache_local: 是否缓存到本地
         :param mtype: 限定站点资源分类
         :param rule_groups: 指定过滤规则组，为空时使用默认搜索过滤规则
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         search_params, cache_params = _build_title_search_params(
             title=title,
             page=page,
             sites=sites,
             mtype=mtype,
+            mode=mode,
         )
         if title:
             logger.info(f"开始搜索资源，关键词：{title} ...")
@@ -391,9 +405,12 @@ class SearchTitleOwner(_SearchOwnerBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[List[str]] = None,
+        mode: Optional[str] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         根据标题渐进式搜索资源，不识别媒体信息，按默认搜索过滤规则返回结果
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         search_params, cache_params = _build_title_search_params(
             title=title,
@@ -401,6 +418,7 @@ class SearchTitleOwner(_SearchOwnerBase):
             sites=sites,
             mtype=mtype,
             include_empty_type=True,
+            mode=mode,
         )
         if cache_local:
             self.cancel_ai_recommend()

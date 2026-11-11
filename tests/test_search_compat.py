@@ -88,6 +88,7 @@ EXPECTED_SIGNATURES = {
         ("cache_local", False),
         ("mtype", None),
         ("rule_groups", None),
+        ("mode", None),
     ),
     "async_process": (
         ("self", REQUIRED),
@@ -122,6 +123,7 @@ EXPECTED_SIGNATURES = {
         ("cache_local", False),
         ("mtype", None),
         ("rule_groups", None),
+        ("mode", None),
     ),
     "async_process_stream": (
         ("self", REQUIRED),
@@ -144,6 +146,7 @@ EXPECTED_SIGNATURES = {
         ("cache_local", False),
         ("mtype", None),
         ("rule_groups", None),
+        ("mode", None),
     ),
     "_SearchChain__search_all_sites": (
         ("self", REQUIRED),
@@ -153,6 +156,7 @@ EXPECTED_SIGNATURES = {
         ("page", 0),
         ("area", "title"),
         ("mtype", None),
+        ("mode", None),
     ),
     "_SearchChain__async_search_all_sites": (
         ("self", REQUIRED),
@@ -162,6 +166,7 @@ EXPECTED_SIGNATURES = {
         ("page", 0),
         ("area", "title"),
         ("mtype", None),
+        ("mode", None),
     ),
     "_SearchChain__async_search_all_sites_stream": (
         ("self", REQUIRED),
@@ -171,6 +176,7 @@ EXPECTED_SIGNATURES = {
         ("page", 0),
         ("area", "title"),
         ("mtype", None),
+        ("mode", None),
     ),
 }
 

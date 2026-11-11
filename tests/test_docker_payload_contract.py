@@ -11,6 +11,7 @@ DOCKERFILE = ROOT / "docker" / "Dockerfile"
 UPDATER = ROOT / "docker" / "update.sh"
 RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "build-v3.yml"
 BETA_WORKFLOW = ROOT / ".github" / "workflows" / "beta.yml"
+FORK_WORKFLOW = ROOT / ".github" / "workflows" / "dockerhub.yml"
 
 
 def _read(path: Path) -> str:
@@ -183,9 +184,9 @@ test ! -e {shlex.quote(str(stage_plugins / 'stale'))}
 
 def test_release_workflows_pin_and_record_external_payload_identities() -> None:
     """
-    正式与 Beta 构建都必须以真实制品身份驱动缓存并写入镜像标签。
+    正式、Beta 与 Fork 构建都必须以真实制品身份驱动缓存并写入镜像标签。
     """
-    for workflow_path in (RELEASE_WORKFLOW, BETA_WORKFLOW):
+    for workflow_path in (RELEASE_WORKFLOW, BETA_WORKFLOW, FORK_WORKFLOW):
         workflow = _read(workflow_path)
 
         for build_arg in (

@@ -226,6 +226,34 @@ python -m scripts.generate_plugin_market_default \
   --config-file app/runtime/config.py
 ```
 
+### 4.2 Fork 自动发布到 Docker Hub
+
+Fork 可使用 [dockerhub.yml](../.github/workflows/dockerhub.yml) 中的 **Fork Docker Hub** 工作流。
+每次 push 到 `v3` 都会构建，也支持在 Actions 页面手动选择 `v3` 运行；其他分支的手动运行会跳过。
+工作流使用 `docker/Dockerfile` 构建标准 Python 版的 `linux/amd64` 和 `linux/arm64/v8` 镜像，
+只上传 Docker Hub，不创建 GitHub Release、不推送 Git 标签，也不生成 free-threaded 镜像。
+
+首次配置：
+
+1. 在 Docker Hub 创建 `<Docker Hub 用户名>/moviepilot-v3` 仓库，并创建具有该仓库写入权限的 Access Token。
+2. 在 fork 的 **Settings → Secrets and variables → Actions** 添加两个 Repository Secrets：
+   `DOCKER_USERNAME` 为 Docker Hub 用户名，`DOCKER_PASSWORD` 为 Access Token（不是登录密码）。
+   不要将 Token 写入代码、工作流文件或提交记录。
+3. 在 fork 的 Actions 页面启用工作流。停用原 **MoviePilot Builder v3** 工作流，避免它在版本变更时
+   同时发布 `moviepilot-v3:latest`、额外镜像和 GitHub Release；仅保留新的工作流负责该镜像。
+4. 将工作流提交并推送到 `v3`，或在 **Fork Docker Hub → Run workflow** 选择 `v3` 手动构建。
+   手动运行入口要求工作流文件已存在于仓库默认分支。
+
+构建发布两个标签：`<用户名>/moviepilot-v3:latest` 和 `<用户名>/moviepilot-v3:sha-<完整提交 SHA>`。
+部署时将 Compose 的 `image` 改成自己的镜像地址，再执行 `docker compose pull` 和
+`docker compose up -d`；回退时可以指定此前成功构建的 SHA 标签。同一提交手动重建会更新该 SHA 标签，
+需要固定完全相同的制品时应使用镜像 digest。
+
+构建前检查锁文件并通过 PyPI、OSV 审计标准版运行依赖；保留前端 SHA-256 校验、插件和站点资源
+Commit 固定、Wiki 插件市场生成、models.dev 目录下载及系统更新刷新键。生成内容仅用于镜像，
+不会回写源码分支。GHA 缓存使用独立 scope，同分支的新任务会取消旧任务。
+上传成功仍取决于 Secrets、Docker Hub 权限、外部资源和依赖审计结果；本地配置检查不代表已经发布。
+
 ### 5. 运行依赖漏洞检查
 
 正式发布会使用最新稳定版 `pip-audit` 检查 `uv.lock` 锁定的运行时依赖。依赖变更后也可以在

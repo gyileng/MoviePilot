@@ -124,6 +124,7 @@ class SearchSources:
         """
         self.activity = current_activity_run()
         self.owner = cast(_SearchOwnerBase, owner)
+        self.mode = plan.mode
         self.media = cast(MediaInfo, plan.mediainfo)
         self.sites = {str(site["id"]): site for site in self.owner._sync_indexers(plan.sites)}
         if self.activity:
@@ -195,7 +196,8 @@ class SearchSources:
             try:
                 items = ([] if _wait_for_site_request(site) else
                          self.owner.search_site_torrents(site=site, keyword=query["keyword"],
-                                                         mtype=media_type, page=page) or [])
+                                                         mtype=media_type, page=page,
+                                                         **({"mode": self.mode} if self.mode else {})) or [])
                 if self.activity:
                     self.activity.site(int(query["site"]), name=str(site.get("name") or ""), candidates=len(items), status=observation.outcome, attempted=observation.attempted)
                 if observation.outcome == "deferred":

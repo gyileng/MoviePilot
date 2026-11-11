@@ -203,7 +203,7 @@ SPIDER_PARSER_CLASSES: dict[str, type[_PagedSpider]] = {
 _SPECIALIZED_SEARCH_ARGUMENTS = {
     "TNodeSpider": ("keyword", "page"),
     "TorrentLeech": ("keyword", "mtype", "page"),
-    "mTorrent": ("keyword", "mtype", "cat", "page"),
+    "mTorrent": ("keyword", "mtype", "cat", "page", "mode"),
     "SunnyPT": ("keyword", "mtype", "cat", "page"),
     "Yema": ("keyword", "mtype", "cat", "page"),
     "Haidan": ("keyword", "mtype"),
@@ -561,9 +561,12 @@ class IndexerModule(_ModuleBase):
         cat: Optional[str] = None,
         page: Optional[int] = 0,
         search_type: str = "torrents",
+        mode: Optional[str] = None,
     ) -> Optional[_IndexerSearchRequest]:
         """
         校验搜索条件并生成同步、异步共用的解析器调用请求。
+
+        :param mode: 仅传给 M-Team 的模式，非空时覆盖其分类限制
         """
         if search_type == "subtitles" and not site.get("subtitles"):
             return None
@@ -601,6 +604,7 @@ class IndexerModule(_ModuleBase):
         torrent_argument_names = _SPECIALIZED_SEARCH_ARGUMENTS.get(parser_name)
         if parser_class and torrent_argument_names:
             torrent_available_arguments: dict[str, Any] = {
+                "mode": mode,
                 "keyword": search_word,
                 "mtype": mtype,
                 "cat": cat,
@@ -611,6 +615,7 @@ class IndexerModule(_ModuleBase):
                 arguments=MappingProxyType({
                     name: torrent_available_arguments[name]
                     for name in torrent_argument_names
+                    if name != "mode" or mode
                 }),
             )
 
@@ -690,13 +695,14 @@ class IndexerModule(_ModuleBase):
                         keyword: Optional[str] = None,
                         mtype: Optional[MediaType] = None,
                         cat: Optional[str] = None,
-                        page: Optional[int] = 0) -> List[TorrentInfo]:
+                        page: Optional[int] = 0, mode: Optional[str] = None) -> List[TorrentInfo]:
         """
         搜索一个站点。
 
         :param site: 站点
         :param keyword: 搜索关键词
         :param mtype: 媒体类型
+        :param mode: 仅对 M-Team 生效的搜索模式，非空时覆盖站点分类
         :param cat: 分类
         :param page: 页码
         :return: 资源列表
@@ -711,6 +717,7 @@ class IndexerModule(_ModuleBase):
             keyword=keyword,
             mtype=mtype,
             cat=cat,
+            mode=mode,
             page=page,
         )
         if not request:
@@ -812,13 +819,14 @@ class IndexerModule(_ModuleBase):
                                     keyword: Optional[str] = None,
                                     mtype: Optional[MediaType] = None,
                                     cat: Optional[str] = None,
-                                    page: Optional[int] = 0) -> List[TorrentInfo]:
+                                    page: Optional[int] = 0, mode: Optional[str] = None) -> List[TorrentInfo]:
         """
         异步搜索一个站点。
 
         :param site: 站点
         :param keyword: 搜索关键词
         :param mtype: 媒体类型
+        :param mode: 仅对 M-Team 生效的搜索模式，非空时覆盖站点分类
         :param cat: 分类
         :param page: 页码
         :return: 资源列表
@@ -833,6 +841,7 @@ class IndexerModule(_ModuleBase):
             keyword=keyword,
             mtype=mtype,
             cat=cat,
+            mode=mode,
             page=page,
         )
         if not request:

@@ -70,9 +70,12 @@ class SearchCacheOwner(_SearchOwnerBase):
         music_type: Optional[str] = None,
         result_type: Optional[str] = "torrent",
         include_candidates: bool = False,
+        mode: Optional[str] = None,
     ) -> None:
         """
         保存最后一次资源搜索参数，标题搜索与精确身份搜索使用互斥字段。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         self._search_state().save_params(
             keyword=keyword,
@@ -88,6 +91,7 @@ class SearchCacheOwner(_SearchOwnerBase):
             music_type=music_type,
             result_type=result_type,
             include_candidates=include_candidates,
+            mode=mode,
         )
 
     async def async_save_last_search_params(
@@ -106,9 +110,12 @@ class SearchCacheOwner(_SearchOwnerBase):
         music_type: Optional[str] = None,
         result_type: Optional[str] = "torrent",
         include_candidates: bool = False,
+        mode: Optional[str] = None,
     ) -> None:
         """
         异步保存最后一次资源搜索参数，标题搜索与精确身份搜索使用互斥字段。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         await self._search_state().async_save_params(
             keyword=keyword,
@@ -124,6 +131,7 @@ class SearchCacheOwner(_SearchOwnerBase):
             music_type=music_type,
             result_type=result_type,
             include_candidates=include_candidates,
+            mode=mode,
         )
 
     def last_search_params(self) -> Optional[Dict[str, str]]:

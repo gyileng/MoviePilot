@@ -127,7 +127,7 @@ class _ManualPage:
         # 超过最大页数，或不支持分页的站点请求后续页时，直接按末页返回。
         if page >= MAX_SEARCH_PAGES or (page > 0 and not pageable):
             return facts, [], observations
-        previous = self.page_cache.get(f"{source}:{page - 1}", region=_PAGE_CACHE_REGION) if page else None
+        previous = self.page_cache.get(f"{source}:{self.plan.mode or ''}:{page - 1}", region=_PAGE_CACHE_REGION) if page else None
         pages = [page - 1, page] if page and previous is None else [page]
         for requested_page in pages:
             # 两次请求均经过原站点流控；失败不写摘要，也不推进客户端指定的页号。
@@ -139,7 +139,7 @@ class _ManualPage:
                              can_continue=query["site"] != "plugin")
                 return facts, [], observations
             signature = search_page_signature(search_resource_id(item) for item in result.torrents) or ""
-            self.page_cache.set(f"{source}:{requested_page}", signature, region=_PAGE_CACHE_REGION)
+            self.page_cache.set(f"{source}:{self.plan.mode or ''}:{requested_page}", signature, region=_PAGE_CACHE_REGION)
             if requested_page < page:
                 previous = signature
         raw_count = observation.raw_count if observation.raw_count is not None else len(result.torrents)
@@ -267,6 +267,7 @@ async def _prepare_page(owner: _SearchOwnerBase, params: dict[str, Any]) -> _Man
         site, keyword, search_id = decode_source(continuation)
         sites = [int(site)] if site.isdigit() else []
     plan = MediaSearchPlan(media, keyword=keyword, sites=sites,
+                           mode=params.get("mode") if raw_title else None,
                            area=params.get("area") or "title", rule_groups=rules,
                            no_exists=None if raw_title else _build_missing_media_map(media, params.get("season")))
     return await _offload(_ManualPage, owner, plan, raw_title, search_id)
@@ -320,7 +321,7 @@ async def _page_events(manual: _ManualPage, params: dict[str, Any]) -> AsyncGene
             media_source=None if manual.raw_title else manual.media.media_source,
             media_id=None if manual.raw_title else manual.media.media_id, mtype=manual.media.type,
             area=manual.plan.area, season=None if manual.raw_title else params.get("season"),
-            sites=params.get("sites"), result_type="torrent")
+            sites=params.get("sites"), result_type="torrent", mode=manual.plan.mode)
         manual.owner.save_last_search_params(**cache_params)
         if isinstance(params.get("user_id"), int):
             from app.schemas.search import SearchLastContextData

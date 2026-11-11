@@ -264,9 +264,12 @@ class SearchChain(ChainBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[list[str]] = None,
+        mode: Optional[str] = None,
     ) -> list[Context]:
         """
         通过稳定 Facade 调用标题搜索 owner，保留精确的公开类型合同。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         return SearchTitleOwner.search_by_title(
             cast(SearchTitleOwner, self),
@@ -276,6 +279,7 @@ class SearchChain(ChainBase):
             cache_local=cache_local,
             mtype=mtype,
             rule_groups=rule_groups,
+            mode=mode,
         )
 
     def last_search_results(self) -> Optional[list[Context]]:
@@ -424,9 +428,12 @@ class SearchChain(ChainBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[list[str]] = None,
+        mode: Optional[str] = None,
     ) -> list[Context]:
         """
         通过稳定 Facade 执行异步标题资源搜索。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         return await SearchTitleOwner.async_search_by_title(
             cast(SearchTitleOwner, self),
@@ -436,6 +443,7 @@ class SearchChain(ChainBase):
             cache_local=cache_local,
             mtype=mtype,
             rule_groups=rule_groups,
+            mode=mode,
         )
 
     async def async_search_by_title_stream(
@@ -446,9 +454,12 @@ class SearchChain(ChainBase):
         cache_local: Optional[bool] = False,
         mtype: Optional[MediaType] = None,
         rule_groups: Optional[list[str]] = None,
+        mode: Optional[str] = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """
         通过稳定 Facade 流式执行标题资源搜索。
+
+        :param mode: M-Team 搜索模式，非空时覆盖该站点分类限制
         """
         async for event in SearchTitleOwner.async_search_by_title_stream(
             cast(SearchTitleOwner, self),
@@ -458,6 +469,7 @@ class SearchChain(ChainBase):
             cache_local=cache_local,
             mtype=mtype,
             rule_groups=rule_groups,
+            mode=mode,
         ):
             yield event
     _build_title_search_meta = staticmethod(SearchTitleOwner._build_title_search_meta)

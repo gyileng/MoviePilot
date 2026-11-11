@@ -630,6 +630,7 @@ _METHOD_CONTRACTS = {
         result_shape=ModuleResultShape.LIST,
         aggregation=ModuleResultAggregation.ORDERED_LIST_MERGE,
         required_parameters=("site", "keyword", "mtype", "page"),
+        optional_parameters=("mode",),
     ),
     "tv_animation": ModuleMethodContract(
         family="media-discovery",

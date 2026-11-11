@@ -254,3 +254,40 @@ async def test_real_search_chain_context_roundtrip_isolates_users_and_clears_dia
     assert updated.data.results[0].torrent_info.title == "Updated result"
     assert second.data.params == {"keyword": "Second"}
     assert second.data.results == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("manual", [False, True])
+async def test_title_stream_forwards_mode_and_records_context(monkeypatch, manual):
+    """
+    两条标题流式路径都传递模式，普通流完成后保存该模式。
+    """
+    calls = []
+    save = AsyncMock()
+
+    async def source(**kwargs):
+        """
+        记录流式调用并提供可完成的空结果。
+        """
+        calls.append(kwargs)
+        yield {"type": "done", "stage": "done", "items": []}
+
+    async def consume(_request, events):
+        """
+        消费原始事件以验证最终上下文写入。
+        """
+        async for event in events:
+            yield str(event)
+
+    monkeypatch.setattr(endpoint, "SearchChain", lambda: SimpleNamespace(
+        async_search_by_title_stream=source, search_page_events=source,
+        async_save_search_context=save,
+    ))
+    monkeypatch.setattr(endpoint, "_stream_search_events", consume)
+    response = await endpoint.search_by_title_stream(
+        request=None, keyword="Show", mode="adult", manual_paging=manual, _=TokenPayload(sub=51),
+    )
+    assert [item async for item in response.body_iterator]
+    assert (calls[0]["params"] if manual else calls[0])["mode"] == "adult"
+    if not manual:
+        assert save.await_args.args[1].params["mode"] == "adult"
