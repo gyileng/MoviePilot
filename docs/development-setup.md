@@ -226,10 +226,10 @@ python -m scripts.generate_plugin_market_default \
   --config-file app/runtime/config.py
 ```
 
-### 4.2 Fork 自动发布到 Docker Hub
+### 4.2 Fork 手动发布到 Docker Hub
 
 Fork 可使用 [dockerhub.yml](../.github/workflows/dockerhub.yml) 中的 **Fork Docker Hub** 工作流。
-每次 push 到 `v3` 都会构建，也支持在 Actions 页面手动选择 `v3` 运行；其他分支的手动运行会跳过。
+仅在 Actions 页面手动选择 `v3` 运行时构建，push 不触发镜像构建；其他分支的手动运行会跳过。
 工作流使用 `docker/Dockerfile` 构建标准 Python 版的 `linux/amd64` 和 `linux/arm64/v8` 镜像，
 只上传 Docker Hub，不创建 GitHub Release、不推送 Git 标签，也不生成 free-threaded 镜像。
 
@@ -241,7 +241,7 @@ Fork 可使用 [dockerhub.yml](../.github/workflows/dockerhub.yml) 中的 **Fork
    不要将 Token 写入代码、工作流文件或提交记录。
 3. 在 fork 的 Actions 页面启用工作流。停用原 **MoviePilot Builder v3** 工作流，避免它在版本变更时
    同时发布 `moviepilot-v3:latest`、额外镜像和 GitHub Release；仅保留新的工作流负责该镜像。
-4. 将工作流提交并推送到 `v3`，或在 **Fork Docker Hub → Run workflow** 选择 `v3` 手动构建。
+4. 将工作流提交并推送到 `v3` 后，在 **Fork Docker Hub → Run workflow** 选择 `v3` 手动构建。
    手动运行入口要求工作流文件已存在于仓库默认分支。
 
 构建发布两个标签：`<用户名>/moviepilot-v3:latest` 和 `<用户名>/moviepilot-v3:sha-<完整提交 SHA>`。

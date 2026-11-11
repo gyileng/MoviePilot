@@ -1,7 +1,5 @@
 name: Fork Docker Hub
 on:
-  push:
-    branches: [v3]
   workflow_dispatch:
 
 # 同一分支只保留最新构建，避免旧任务晚完成后覆盖 latest。
