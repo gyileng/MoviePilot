@@ -19,7 +19,7 @@ Purpose: 按自由文本标题和可选媒体条件搜索字幕提供方。
 Identity scope: `bound_user`; required role: `user`.
 - `response`: `data` remains a list and `collection.result_count` reports the returned items. `collection.total_count` is omitted because this endpoint or its upstream source does not expose a total.
 - `path_params`: none
-- `query`: `keyword` (string|null): 发现设置或筛选存储项目时使用的不区分大小写子串。; `page` (integer|null; default `0`): 从 1 开始的结果页码。; `sites` (string|null): 搜索或订阅范围包含的精确站点标识。
+- `query`: `keyword` (string|null): 发现设置或筛选存储项目时使用的不区分大小写子串。; `page` (integer|null; default `0`): 从 0 开始的站点结果页码：0 表示第一页，首次搜索省略或传 0；续页时在上一次页码上加 1，传 1 会跳过第一页。; `sites` (string|null): 搜索或订阅范围包含的精确站点标识。
 - `body`: none
 
 ## Body Models

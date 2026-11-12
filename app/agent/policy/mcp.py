@@ -1004,6 +1004,11 @@ def _apply_operation_overrides(
         required = query_schema.setdefault("required", [])
         if "state" not in required:
             required.append("state")
+    if operation_id in {"search.title", "subtitle.search.title", "site.resource"} and query_schema is not None:
+        query_schema["properties"]["page"]["description"] = (
+            "从 0 开始的站点结果页码：0 表示第一页，首次搜索省略或传 0；"
+            "续页时在上一次页码上加 1，传 1 会跳过第一页。"
+        )
     if operation_id == "search.title" and query_schema is not None:
         query_schema["properties"]["mode"]["description"] = (
             "M-Team 搜索模式，非空时原样发送并将 categories 置为空数组，覆盖媒体类型和站点分类限制；"

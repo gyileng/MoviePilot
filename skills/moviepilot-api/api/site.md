@@ -108,7 +108,7 @@ Purpose: 按分类和关键词浏览指定站点的种子资源。
 Identity scope: `admin`; required role: `system_admin`.
 - `response`: `data` remains a list and `collection.result_count` reports the returned items. `collection.total_count` is omitted because this endpoint or its upstream source does not expose a total.
 - `path_params`: `site_id*` (integer): site.list 返回的持久化站点标识。
-- `query`: `cat` (string|null): site.category 返回的精确站点分类标识。; `keyword` (string|null): 发现设置或筛选存储项目时使用的不区分大小写子串。; `mtype` (string(movie,tv,music)|null): 操作要求的媒体类型或订阅历史分类。 Agent-facing values: movie,tv,music. Use this exact field name in its documented bucket.; `page` (integer|null; default `0`): 从 1 开始的结果页码。
+- `query`: `cat` (string|null): site.category 返回的精确站点分类标识。; `keyword` (string|null): 发现设置或筛选存储项目时使用的不区分大小写子串。; `mtype` (string(movie,tv,music)|null): 操作要求的媒体类型或订阅历史分类。 Agent-facing values: movie,tv,music. Use this exact field name in its documented bucket.; `page` (integer|null; default `0`): 从 0 开始的站点结果页码：0 表示第一页，首次搜索省略或传 0；续页时在上一次页码上加 1，传 1 会跳过第一页。
 - `body`: none
 
 ### `site.rss`

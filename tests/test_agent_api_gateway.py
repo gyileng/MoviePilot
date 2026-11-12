@@ -368,6 +368,27 @@ async def test_gateway_raw_tool_inputs_return_actionable_errors_without_executio
     executor.execute.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    "operation_id",
+    ["search.title", "subtitle.search.title", "site.resource"],
+)
+def test_mcp_site_page_contract_states_zero_based_first_page(operation_id: str) -> None:
+    """
+    站点搜索与浏览的页码从 0 开始，MCP 字段说明不得沿用通用的从 1 开始描述。
+    """
+    schema = MoviePilotApiTool(session_id="session", user_id="api_user").get_mcp_input_schema()
+    branch = next(
+        item for item in schema["oneOf"]
+        if item["properties"]["operation_id"]["const"] == operation_id
+    )
+    page = branch["properties"]["query"]["properties"]["page"]
+
+    assert page["default"] == 0
+    assert "从 0 开始" in page["description"]
+    assert "0 表示第一页" in page["description"]
+    assert "从 1 开始" not in page["description"]
+
+
 def test_mcp_collection_contract_distinguishes_exact_and_unavailable_totals() -> None:
     """
     MCP 必须说明缺省全量、精确总数和外部无总数三种集合语义。

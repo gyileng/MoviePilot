@@ -1,6 +1,6 @@
 ---
 name: moviepilot-api
-version: 73
+version: 74
 description: >-
   Use this skill for MoviePilot product operations such as media search, torrent
   search, downloads, subscriptions, library checks, sites, storage, workflows,
@@ -462,3 +462,7 @@ Do not infer provenance from current subscription settings when an older history
 
 `search.title` accepts optional `query.mode` for M-Team. A nonempty value overrides
 site categories with an empty array; other sites ignore it. See `api/search.md`.
+
+`search.title`, `subtitle.search.title`, and `site.resource` use a zero-based `query.page`:
+`0` is the first page and the default. Omit it or send `0` for a first search, then add 1
+per continuation; sending `1` first skips the first page. Other paged operations stay one-based.
